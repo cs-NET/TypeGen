@@ -101,6 +101,29 @@ namespace TypeGen.IntegrationTest.Generator
             Assert.Equal(expected, FormatOutput(interceptor.GeneratedOutputs[type].Content));
         }
 
+        [Theory]
+        [InlineData(typeof(TestEntities.ConstantsOnly), "TypeGen.IntegrationTest.Generator.Expected.constants-only.ts")]
+        public async Task TestConstantsOnlyGenerateSpec(Type type, string expectedLocation)
+        {
+            var readExpectedTask = EmbededResourceReader.GetEmbeddedResourceAsync(expectedLocation);
+
+            var spec = new TestConstantsOnlyGenerationSpec();
+            var generator = new Gen.Generator()
+            {
+                Options =
+                {
+                    CsDefaultValuesForConstantsOnly = true
+                }
+            };
+            var interceptor = GeneratorOutputInterceptor.CreateInterceptor(generator);
+
+            await generator.GenerateAsync(new[] { spec });
+            var expected = (await readExpectedTask).Trim();
+
+            Assert.True(interceptor.GeneratedOutputs.ContainsKey(type));
+            Assert.Equal(expected, FormatOutput(interceptor.GeneratedOutputs[type].Content));
+        }
+
         /// <summary>
         /// Tests exception containing initial type name is thrown when dependency type fails
         /// </summary>
@@ -126,7 +149,7 @@ namespace TypeGen.IntegrationTest.Generator
         private string FormatOutput(string output)
             => output
                 .Trim()
-                .Replace("\n", "") 
+                .Replace("\n", "")
                 .Replace("\r", "")
                 .Replace("\r\n", "");
 
@@ -149,6 +172,14 @@ namespace TypeGen.IntegrationTest.Generator
                 AddClass(typeof(TestEntities.GenericWithRestrictions<>));
                 AddClass<TestEntities.LiteDbEntity>().Member(nameof(TestEntities.LiteDbEntity.MyBsonArray)).Ignore();
                 AddInterface<TestEntities.NestedEntity>("./very/nested/directory/").Member(nameof(TestEntities.NestedEntity.OptionalProperty)).Optional();
+            }
+        }
+
+        private class TestConstantsOnlyGenerationSpec : GenerationSpec
+        {
+            public TestConstantsOnlyGenerationSpec()
+            {
+                AddClass<TestEntities.ConstantsOnly>();
             }
         }
 
