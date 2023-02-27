@@ -124,6 +124,29 @@ namespace TypeGen.IntegrationTest.Generator
             Assert.Equal(expected, FormatOutput(interceptor.GeneratedOutputs[type].Content));
         }
 
+        [Theory]
+        [InlineData(typeof(TestEntities.NullableClass), "TypeGen.IntegrationTest.Generator.Expected.nullable-class.ts")]
+        public async Task TestNullableTranslationGenerateSpec(Type type, string expectedLocation)
+        {
+            var readExpectedTask = EmbededResourceReader.GetEmbeddedResourceAsync(expectedLocation);
+
+            var spec = new TestNullableTranslationGenerationSpec();
+            var generator = new Gen.Generator()
+            {
+                Options =
+                {
+                    CsNullableTranslation = Core.StrictNullTypeUnionFlags.Optional
+                }
+            };
+            var interceptor = GeneratorOutputInterceptor.CreateInterceptor(generator);
+
+            await generator.GenerateAsync(new[] { spec });
+            var expected = (await readExpectedTask).Trim();
+
+            Assert.True(interceptor.GeneratedOutputs.ContainsKey(type));
+            Assert.Equal(expected, FormatOutput(interceptor.GeneratedOutputs[type].Content));
+        }
+
         /// <summary>
         /// Tests exception containing initial type name is thrown when dependency type fails
         /// </summary>
@@ -188,6 +211,14 @@ namespace TypeGen.IntegrationTest.Generator
             public TestExceptionsGenerationSpec()
             {
                 AddClass<TestEntities.TestExceptions>();
+            }
+        }
+
+        private class TestNullableTranslationGenerationSpec : GenerationSpec
+        {
+            public TestNullableTranslationGenerationSpec()
+            {
+                AddClass<TestEntities.NullableClass>();
             }
         }
     }
